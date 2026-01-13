@@ -1,0 +1,807 @@
+:root {
+    --bg-dark: #0a0b10;
+    --bg-panel: #14161f;
+    --bg-panel-hover: #1c1f2b;
+    --primary: #00f2ff;
+    --primary-dim: rgba(0, 242, 255, 0.1);
+    --secondary: #7000ff;
+    --text-main: #e0e6ed;
+    --text-muted: #94a3b8;
+    --border: #2d3748;
+    --success: #00ff9d;
+    --warning: #ffb300;
+    --danger: #ff0055;
+    --glass: rgba(20, 22, 31, 0.8);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Rajdhani', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    height: 100vh;
+    overflow: hidden;
+    background-image:
+        radial-gradient(circle at 10% 20%, rgba(112, 0, 255, 0.1) 0%, transparent 20%),
+        radial-gradient(circle at 90% 80%, rgba(0, 242, 255, 0.05) 0%, transparent 20%);
+}
+
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 20px;
+    gap: 20px;
+}
+
+/* HEADER */
+.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 15px;
+}
+
+.title-marquee-container {
+    flex: 1;
+    overflow: hidden;
+    margin-right: 30px;
+    position: relative;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    /* Premium Fade Effect on Edges */
+    mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+}
+
+.glow-text {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 0 5px #00f2ff, 0 0 10px #00f2ff, 0 0 20px #00f2ff, 0 0 40px #007ac1;
+    letter-spacing: 2px;
+    font-family: 'Rajdhani', sans-serif;
+}
+
+.scrolling-title {
+    white-space: nowrap;
+    position: absolute;
+    animation: scrollLive 20s linear infinite;
+    min-width: 100%;
+    will-change: transform;
+    /* PERFORMANCE BOOST */
+    transform: translateZ(0);
+    /* Force GPU */
+}
+
+@keyframes scrollLive {
+    0% {
+        transform: translateX(50%);
+        /* Start from right */
+        opacity: 0;
+    }
+
+    5% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateX(-150%);
+        /* Move to left */
+        opacity: 1;
+    }
+}
+
+.status-bar {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    font-family: 'Roboto Mono', monospace;
+}
+
+.status-badge {
+    background: rgba(0, 255, 157, 0.1);
+    color: var(--success);
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 255, 157, 0.3);
+    font-size: 0.8rem;
+    font-weight: 600;
+    animation: pulse 2s infinite;
+}
+
+.status-badge.live {
+    box-shadow: 0 0 8px rgba(0, 255, 157, 0.2);
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+/* LAYOUT */
+.three-column-layout {
+    display: flex;
+    flex: 1;
+    gap: 20px;
+    overflow: hidden;
+}
+
+.column {
+    flex: 1;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.column:hover {
+    box-shadow: 0 15px 40px rgba(0, 242, 255, 0.05);
+    border-color: rgba(0, 242, 255, 0.3);
+}
+
+.col-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.col-header h2 {
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-main);
+}
+
+.col-header .subtitle {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 5px;
+    margin-left: 30px;
+}
+
+.col-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* INPUT AREA */
+#inputArea {
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 15px;
+    color: var(--secondary);
+    /* High contrast for raw text */
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.9rem;
+    resize: none;
+    flex: 1;
+    color: #fff;
+}
+
+#inputArea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 10px var(--primary-dim);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s;
+    text-transform: uppercase;
+}
+
+.btn.primary {
+    background: linear-gradient(135deg, var(--secondary), #5000cc);
+    color: white;
+    box-shadow: 0 4px 15px rgba(112, 0, 255, 0.3);
+}
+
+.btn.primary:hover {
+    filter: brightness(1.2);
+    transform: translateY(-1px);
+}
+
+.btn.danger {
+    background: rgba(255, 0, 85, 0.1);
+    color: var(--danger);
+    border: 1px solid rgba(255, 0, 85, 0.3);
+}
+
+.btn.danger:hover {
+    background: rgba(255, 0, 85, 0.2);
+}
+
+.btn.secondary {
+    background: rgba(0, 242, 255, 0.1);
+    color: var(--primary);
+    border: 1px solid rgba(0, 242, 255, 0.3);
+}
+
+/* LIST ITEMS */
+.data-item {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 3px solid var(--border);
+    animation: fadeIn 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.data-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-left-color: var(--primary);
+}
+
+.data-item .row-main {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+}
+
+.data-item .row-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-family: 'Roboto Mono', monospace;
+}
+
+.badge {
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    background: #333;
+}
+
+.badge.bank {
+    background: rgba(0, 242, 255, 0.15);
+    color: var(--primary);
+}
+
+/* SUMMARY */
+.summary-card {
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.03), transparent);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.summary-card h3 {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+
+.summary-card .stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.summary-card .stat-value.money {
+    color: var(--success);
+    text-shadow: 0 0 10px rgba(0, 255, 157, 0.2);
+}
+
+.code-block {
+    background: #000;
+    padding: 10px;
+    border-radius: 6px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    max-height: 200px;
+    overflow: auto;
+    border: 1px solid var(--border);
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+}
+
+/* TABLE STYLES */
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    font-family: 'Roboto Mono', monospace;
+}
+
+thead th {
+    background: var(--bg-panel-hover);
+    color: var(--primary);
+    text-align: left;
+    padding: 12px 15px;
+    border-bottom: 2px solid var(--border);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.2s;
+}
+
+tbody tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+tbody td {
+    padding: 10px 15px;
+    color: var(--text-main);
+    vertical-align: middle;
+}
+
+/* Specific Column Styles */
+/* Column 1: Bank - Styled via .bank-cell and .badge */
+tbody td:nth-child(1) {
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 8px 10px;
+    width: 100px;
+    vertical-align: middle;
+}
+
+.bank-cell {
+    text-align: center;
+}
+
+.bank-cell .badge {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    font-weight: 800;
+    border-radius: 4px;
+    display: inline-block;
+    min-width: 60px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    letter-spacing: 0.5px;
+    color: white;
+    /* Default text color for badges */
+}
+
+tbody td:nth-child(2) {
+    color: var(--warning);
+    /* Account Number */
+    font-weight: 600;
+}
+
+tbody td:nth-child(3) {
+    color: var(--text-main);
+    /* Username */
+}
+
+tbody td:nth-child(4) {
+    color: #ccc;
+    /* Account Name */
+    text-transform: uppercase;
+}
+
+tbody td:nth-child(5) {
+    text-align: right;
+    color: var(--success);
+    /* Nominal */
+    font-weight: bold;
+}
+
+.row-no-padding {
+    padding: 0 !important;
+}
+
+.empty-state {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+/* BANK SPECIFIC COLORS (High Priority) */
+/* Colors apply to .badge inside .bank-cell now */
+
+/* E-Wallets */
+.bank-dana {
+    background: #118eea !important;
+    color: white !important;
+}
+
+.bank-ovo {
+    background: #4c3494 !important;
+    color: white !important;
+}
+
+.bank-gopay {
+    background: #00aeb6 !important;
+    color: white !important;
+}
+
+.bank-linkaja {
+    background: #e3262e !important;
+    color: white !important;
+}
+
+.bank-shopeepay {
+    background: #ee4d2d !important;
+    color: white !important;
+}
+
+/* Banks */
+.bank-bca {
+    background: #0037a8 !important;
+    color: white !important;
+}
+
+.bank-bri {
+    background: #00529c !important;
+    color: white !important;
+}
+
+.bank-mandiri {
+    background: #ffb81c !important;
+    color: #003d79 !important;
+}
+
+.bank-bni {
+    background: #005e6a !important;
+    color: white !important;
+}
+
+.bank-seabank {
+    background: #ff5600 !important;
+    color: white !important;
+}
+
+.bank-bsi {
+    background: #00a39d !important;
+    color: white !important;
+}
+
+.bank-danamon {
+    background: #f58220 !important;
+    color: white !important;
+}
+
+.bank-cimb {
+    background: #7e0000 !important;
+    color: white !important;
+}
+
+.bank-maybank {
+    background: #ffcd00 !important;
+    color: #000 !important;
+}
+
+.bank-jago {
+    background: #532870 !important;
+    color: #fbc100 !important;
+}
+
+.bank-usdt {
+    background: #26a17b !important;
+    color: white !important;
+}
+
+/* Header with Stats Layout */
+.header-with-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-stats {
+    display: flex;
+    gap: 15px;
+}
+
+.mini-stat-card {
+    background: rgba(255, 0, 85, 0.1);
+    /* Red tint */
+    border: 1px solid rgba(255, 0, 85, 0.3);
+    padding: 5px 10px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    min-width: 120px;
+}
+
+.mini-stat-card .label {
+    font-size: 0.65rem;
+    color: #ff80a0;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.mini-stat-card .value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+/* SORTED TABLE STYLES (Right Column) */
+.item-list-container {
+    padding-top: 0 !important;
+    /* Ensure header sticks to very top */
+}
+
+.group-table-container {
+    /* overflow-x: auto; */
+    /* Removed overflow-x to ensure sticky header works relative to parent scroll */
+    /* If horizontal scroll is needed, it must be handled carefully or on a wrapper that doesn't clip vertical sticky */
+    padding-top: 0;
+}
+
+.sorted-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+}
+
+.sorted-table thead th {
+    background: var(--bg-panel);
+    /* Solid background matches panel */
+    color: var(--text-muted);
+    padding: 12px 8px;
+    font-size: 0.7rem;
+    border-bottom: 2px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    /* Extremely high z-index */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    /* Stronger shadow to indicate floating */
+    /* Ensure no parent has overflow: hidden that breaks this */
+}
+
+.sorted-table tbody td {
+    padding: 6px 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    white-space: nowrap;
+}
+
+/* Sorted Table Cell Badges */
+.s-cell-bank .badge {
+    font-size: 0.65rem;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-weight: bold;
+    display: inline-block;
+    min-width: 40px;
+    text-align: center;
+    color: white;
+}
+
+/* Header Filter Summary Tags */
+.sort-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    /* Align top */
+    gap: 10px;
+}
+
+.filter-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: flex-end;
+    max-width: 60%;
+}
+
+.summary-badge {
+    font-size: 0.7rem;
+    padding: 5px 12px;
+    border-radius: 20px;
+    color: white;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    /* Modern Border & Depth */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow:
+        0 4px 6px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+    /* Subtle Shine Gradient over the base color */
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(0, 0, 0, 0.1) 100%);
+
+    white-space: nowrap;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: default;
+    position: relative;
+    overflow: hidden;
+}
+
+.summary-badge:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow:
+        0 8px 15px rgba(0, 0, 0, 0.4),
+        0 0 10px rgba(255, 255, 255, 0.2);
+    filter: brightness(1.2);
+    z-index: 10;
+}
+
+/* Optional: 'Live' pulse animation for badges */
+.summary-badge::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transform: skewX(-20deg) translateX(-150%);
+    transition: transform 0.5s;
+}
+
+.summary-badge:hover::after {
+    transform: skewX(-20deg) translateX(150%);
+    transition: transform 0.7s;
+}
+
+/* Ensure sorted table badges also get colors */
+.s-cell-bank .bank-dana {
+    background: #118eea !important;
+}
+
+.s-cell-bank .bank-ovo {
+    background: #4c3494 !important;
+}
+
+.s-cell-bank .bank-gopay {
+    background: #00aeb6 !important;
+}
+
+.s-cell-bank .bank-linkaja {
+    background: #e3262e !important;
+}
+
+.s-cell-bank .bank-bca {
+    background: #0037a8 !important;
+}
+
+.s-cell-bank .bank-bri {
+    background: #00529c !important;
+}
+
+.s-cell-bank .bank-mandiri {
+    background: #ffb81c !important;
+    color: #003d79 !important;
+}
+
+.s-cell-bank .bank-bni {
+    background: #005e6a !important;
+}
+
+.s-cell-bank .bank-seabank {
+    background: #ff5600 !important;
+}
+
+.s-cell-bank .bank-bsi {
+    background: #00a39d !important;
+}
+
+.s-cell-bank .bank-danamon {
+    background: #f58220 !important;
+}
+
+.s-cell-bank .bank-cimb {
+    background: #7e0000 !important;
+}
+
+.s-cell-bank .bank-maybank {
+    background: #ffcd00 !important;
+    color: #000 !important;
+}
+
+.s-cell-bank .bank-jago {
+    background: #532870 !important;
+    color: #fbc100 !important;
+}
+
+.s-cell-bank .bank-usdt {
+    background: #26a17b !important;
+}
+
+
+.s-cell-norek {
+    font-family: 'Roboto Mono', monospace;
+    color: var(--warning);
+    font-weight: 600;
+}
+
+.s-cell-user {
+    color: var(--text-main);
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.s-cell-name {
+    color: #aaa;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.s-cell-nominal {
+    text-align: right;
+    color: var(--success);
+    font-weight: bold;
+}

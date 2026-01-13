@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard SC WD MANUAL</title>
+    <link rel="stylesheet" href="style.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="dashboard-container">
+        <!-- HEADER -->
+        <header class="main-header">
+            <div class="title-marquee-container">
+                <h1 class="glow-text scrolling-title">DASHBOARD LA-TOTO SC AUTO/WD MANUAL</h1>
+            </div>
+            <div class="status-bar">
+                <span id="currentTime">00:00:00</span>
+                <span class="status-badge live">SYSTEM ACTIVE</span>
+            </div>
+        </header>
+
+        <!-- MAIN LAYOUT: 3 COLUMNS -->
+        <main class="three-column-layout">
+
+            <!-- COLUMN 1: INPUT / PASTE AREA -->
+            <section class="column col-1">
+                <div class="col-header">
+                    <h2><span class="icon">📥</span> INPUT RAW DATA</h2>
+                    <p class="subtitle">Tempelkan data pendingan WD di sini (Ctrl+V)</p>
+                </div>
+                <div class="col-content">
+                    <textarea id="inputArea" placeholder="Paste data here..."></textarea>
+                    <div class="action-buttons">
+                        <button id="clearBtn" class="btn danger">CLEAR</button>
+                        <button id="processBtn" class="btn primary">PROCESS RE-SCAN</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- COLUMN 2: PROCESSED LIST -->
+            <section class="column col-2" style="flex: 2;">
+                <!-- Updated Header with Stats -->
+                <div class="col-header header-with-stats">
+                    <div class="header-title">
+                        <h2><span class="icon">📋</span> DATA TERPROSES</h2>
+                        <p class="subtitle">Validasi dan Daftar Transaksi</p>
+                    </div>
+
+                    <div class="header-stats">
+                        <div class="mini-stat-card">
+                            <span class="label">TOTAL WD</span>
+                            <span class="value" id="totalCount">0</span>
+                        </div>
+                        <div class="mini-stat-card">
+                            <span class="label">TOTAL NOMINAL</span>
+                            <span class="value money" id="totalAmount">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-content row-no-padding">
+                    <div class="table-container">
+                        <table id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th>BANK</th>
+                                    <th>NOMOR REKENING</th>
+                                    <th>USERNAME</th>
+                                    <th>NAMA REKENING</th>
+                                    <th>NOMINAL</th>
+                                </tr>
+                            </thead>
+                            <tbody id="processedList">
+                                <!-- Items will be injected here via JS -->
+                            </tbody>
+                        </table>
+                        <div id="emptyState" class="empty-state">Menunggu Data...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- COLUMN 3: SORTED RESULTS -->
+            <section class="column col-3">
+                <div class="col-header sort-header">
+                    <div class="header-title">
+                        <h2><span class="icon">📂</span> DATA SORTIR</h2>
+                        <p class="subtitle">Urut berdasarkan Bank</p>
+                    </div>
+                    <div id="filterSummary" class="filter-summary">
+                        <!-- Badges like [BCA 5] [DANA 3] injected here -->
+                    </div>
+                </div>
+                <div class="col-content item-list-container">
+                    <div id="sortedList" class="sorted-list">
+                        <!-- Grouped Items will be injected here -->
+                        <div class="empty-state">Menunggu Data...</div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

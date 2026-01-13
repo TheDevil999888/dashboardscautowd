@@ -1,0 +1,16 @@
+{
+  "project": "Dashboard SC WD MANUAL",
+  "version": "1.0.0",
+  "structure": {
+    "columns": 3,
+    "col1": "Input Raw Data",
+    "col2": "Processed List",
+    "col3": "Summary"
+  },
+  "data_schema": {
+    "id": "number",
+    "original_text": "string",
+    "detected_amount": "number",
+    "status": "string"
+  }
+}
