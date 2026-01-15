@@ -23,6 +23,9 @@ setInterval(() => {
     document.getElementById('currentTime').innerText = now.toLocaleTimeString('id-ID');
 }, 1000);
 
+// Global state to store latest processed data
+let globalProcessedData = [];
+
 // Prefix mapping for E-Wallets
 const PREFIXES = {
     'DANA': '3901',
@@ -100,7 +103,9 @@ const processData = (rawData) => {
     const bankList = ['BCA', 'BRI', 'MANDIRI', 'BNI', 'DANA', 'GOPAY', 'OVO', 'LINKAJA', 'SEABANK', 'DANAMON', 'CIMB', 'MAYBANK', 'JAGO', 'USDT', 'BSI'];
 
     // CHECK FOR MULTI-LINE BLOCK FORMAT (Anchor: "Deposit")
+    // CHECK FOR MULTI-LINE BLOCK FORMAT (Anchor: "Deposit" OR "Withdraw")
     const hasDepositKeyword = lines.some(l => l.includes('Deposit'));
+    const hasWithdrawKeyword = lines.some(l => l.includes('Withdraw'));
 
     if (hasDepositKeyword) {
         for (let i = 0; i < lines.length; i++) {
@@ -166,6 +171,73 @@ const processData = (rawData) => {
                         finalNoRek = PREFIXES[bankKey] + finalNoRek;
                     }
 
+                    processedData.push({ bank, noRek: finalNoRek, username, namaRek, nominal });
+                    totalAmount += nominal;
+                }
+            }
+        }
+    } else if (hasWithdrawKeyword) {
+        // WITHDRAW FORMAT PARSING
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line.includes('Withdraw')) {
+                // FOUND ANCHOR: "Withdraw 2026-01-15... 500,000 ..."
+
+                // 1. EXTRACT NOMINAL
+                let nominal = 0;
+                // Format: Withdraw [Date] [Time] [Nominal] [Fee]
+                const parts = line.split(/[\t\s]+/);
+                for (const p of parts) {
+                    // Skip parts that look like Date or Time
+                    if (p.includes('-') || p.includes(':')) continue;
+
+                    let clean = p.replace(/,/g, '');
+                    const val = parseFloat(clean);
+                    if (!isNaN(val) && val > 0 && val < 100000000000) {
+                        nominal = val;
+                        break; // Take the first valid number (Nominal)
+                    }
+                }
+
+                // 2. EXTRACT USERNAME (Line before)
+                let username = '-';
+                if (i > 0) {
+                    const prev = lines[i - 1].trim();
+                    // Format: "1 [Username]" or just "Username"
+                    const prevParts = prev.split(/[\t\s]+/);
+                    if (prevParts.length >= 2) username = prevParts[prevParts.length - 1];
+                    else username = prevParts[0];
+                }
+
+                // 3. EXTRACT BANK INFO (Search forward for "To :")
+                // Expected: "To : MANDIRI,1390029713397,Anis Fadillah"
+                let bank = '';
+                let noRek = '';
+                let namaRek = '';
+
+                // Look ahead up to 5 lines
+                for (let j = 1; j <= 5; j++) {
+                    if (i + j >= lines.length) break;
+                    const nextLine = lines[i + j].trim();
+                    if (nextLine.startsWith('To :') || nextLine.includes('To :')) {
+                        const cleanLine = nextLine.substring(nextLine.indexOf(':') + 1).trim();
+                        const csv = cleanLine.split(',');
+                        if (csv.length >= 3) {
+                            bank = csv[0].trim().toUpperCase();
+                            noRek = csv[1].trim();
+                            // Join remaining parts in case name has commas
+                            namaRek = csv.slice(2).join(',').trim();
+                        }
+                        break;
+                    }
+                }
+
+                if (nominal > 0 && bank) {
+                    let finalNoRek = noRek;
+                    const bankKey = Object.keys(PREFIXES).find(k => bank.includes(k));
+                    if (bankKey && !finalNoRek.startsWith(PREFIXES[bankKey])) {
+                        finalNoRek = PREFIXES[bankKey] + finalNoRek;
+                    }
                     processedData.push({ bank, noRek: finalNoRek, username, namaRek, nominal });
                     totalAmount += nominal;
                 }
@@ -310,8 +382,8 @@ const renderSortedData = (data) => {
                     <tr>
                         <th style="width: 5%">BANK</th>
                         <th style="width: 20%">NO. REK</th>
-                        <th style="width: 15%">USER</th>
-                        <th style="width: 40%">NAMA</th>
+                        <th style="width: 25%">USER</th>
+                        <th style="width: 30%">NAMA</th>
                         <th style="width: 20%">JML</th>
                     </tr>
                 </thead>
@@ -351,32 +423,122 @@ const debounce = (func, wait) => {
 // Event Listener for Paste/Input (Debounced)
 const handleInput = debounce((e) => {
     const text = e.target.value;
+
+    // Performance: If empty, clear immediately
     if (!text.trim()) {
         renderData([]);
         renderSortedData([]);
         updateSummary(0, 0, []);
+        globalProcessedData = [];
         return;
     }
 
-    const { processedData, totalAmount } = processData(text);
-    renderData(processedData);
-    renderSortedData(processedData);
-    updateSummary(processedData.length, totalAmount, processedData);
-}, 200); // Optimized to 200ms for balance between snapiness and perf
+    // Performance: Defer heavy processing to next frame to allow UI to update first
+    requestAnimationFrame(() => {
+        // Use setTimeout to break the task if it's very heavy, allowing the browser to breathe
+        setTimeout(() => {
+            const { processedData, totalAmount } = processData(text);
+            globalProcessedData = processedData;
+
+            // Render Processed List
+            renderData(processedData);
+
+            // Render Sorted List (Heavy)
+            renderSortedData(processedData);
+
+            updateSummary(processedData.length, totalAmount, processedData);
+        }, 0);
+    });
+}, 150); // Faster debounce (150ms) for responsiveness
 
 if (inputArea) inputArea.addEventListener('input', handleInput);
 
 if (processBtn) processBtn.addEventListener('click', () => {
     const text = inputArea ? inputArea.value : '';
-    const { processedData, totalAmount } = processData(text);
-    renderData(processedData);
-    renderSortedData(processedData);
-    updateSummary(processedData.length, totalAmount);
+    // Show "Processing..." indicator if needed, but for now just run
+    requestAnimationFrame(() => {
+        setTimeout(() => {
+            const { processedData, totalAmount } = processData(text);
+            globalProcessedData = processedData;
+            renderData(processedData);
+            renderSortedData(processedData);
+            updateSummary(processedData.length, totalAmount);
+        }, 0);
+    });
 });
 
 if (clearBtn) clearBtn.addEventListener('click', () => {
+    // INSTANT UI CLEAR
     if (inputArea) inputArea.value = '';
-    renderData([]);
-    renderSortedData([]);
+
+    // Nuke the DOM immediately without logical processing overhead
+    processedList.innerHTML = '';
+    const sortedContainer = document.getElementById('sortedList');
+    if (sortedContainer) sortedContainer.innerHTML = '<div class="empty-state">Menunggu Data...</div>';
+
+    const summaryContainer = document.getElementById('filterSummary');
+    if (summaryContainer) summaryContainer.innerHTML = '';
+
     updateSummary(0, 0);
+
+    // Reset state
+    globalProcessedData = [];
 });
+
+// COPY BUTTONS FUNCTIONALITY
+const copyProcessedBtn = document.getElementById('copyProcessedBtn');
+const copySortedBtn = document.getElementById('copySortedBtn');
+
+if (copyProcessedBtn) {
+    copyProcessedBtn.addEventListener('click', () => {
+        if (!globalProcessedData || globalProcessedData.length === 0) return;
+
+        // Format: BANK [TAB] NOREK [TAB] USER [TAB] NAME [TAB] NOMINAL
+        const textToCopy = globalProcessedData.map(item =>
+            `${item.bank}\t${item.noRek}\t${item.username}\t${item.namaRek}\t${item.nominal}`
+        ).join('\n');
+
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            const originalText = copyProcessedBtn.innerHTML;
+            copyProcessedBtn.innerHTML = '<span class="icon">✅</span> COPIED';
+            setTimeout(() => {
+                copyProcessedBtn.innerHTML = originalText;
+            }, 1000);
+        });
+    });
+}
+
+if (copySortedBtn) {
+    copySortedBtn.addEventListener('click', () => {
+        if (!globalProcessedData || globalProcessedData.length === 0) return;
+
+        // Use same logic as renderSortedData to ensure same order
+        const grouped = globalProcessedData.reduce((acc, item) => {
+            const key = item.bank.toUpperCase();
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(item);
+            return acc;
+        }, {});
+
+        const sortedKeys = Object.keys(grouped).sort();
+        let textToCopy = '';
+
+        sortedKeys.forEach(bank => {
+            // Optional: Include a header line for the bank group? 
+            // The user said "langsung copy data yang di bawah nya" which usually implies the table rows.
+            // I will just copy the rows in sorted order.
+
+            grouped[bank].forEach(item => {
+                textToCopy += `${item.bank}\t${item.noRek}\t${item.username}\t${item.namaRek}\t${item.nominal}\n`;
+            });
+        });
+
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            const originalText = copySortedBtn.innerHTML;
+            copySortedBtn.innerHTML = '<span class="icon">✅</span> COPIED';
+            setTimeout(() => {
+                copySortedBtn.innerHTML = originalText;
+            }, 1000);
+        });
+    });
+}

@@ -20,7 +20,10 @@
                 <h1 class="glow-text scrolling-title">DASHBOARD LA-TOTO SC AUTO/WD MANUAL</h1>
             </div>
             <div class="status-bar">
-                <span id="currentTime">00:00:00</span>
+                <div class="time-container">
+                    <span class="time-icon">⏳</span>
+                    <span id="currentTime" class="neon-time">00:00:00</span>
+                </div>
                 <span class="status-badge live">SYSTEM ACTIVE</span>
             </div>
         </header>
@@ -53,6 +56,9 @@
                     </div>
 
                     <div class="header-stats">
+                        <button id="copyProcessedBtn" class="btn-copy-header" title="Copy Table Data">
+                            <span class="icon">📋</span> COPY
+                        </button>
                         <div class="mini-stat-card">
                             <span class="label">TOTAL WD</span>
                             <span class="value" id="totalCount">0</span>
@@ -92,8 +98,16 @@
                         <h2><span class="icon">📂</span> DATA SORTIR</h2>
                         <p class="subtitle">Urut berdasarkan Bank</p>
                     </div>
-                    <div id="filterSummary" class="filter-summary">
-                        <!-- Badges like [BCA 5] [DANA 3] injected here -->
+
+                    <!-- Container for Right Side Actions -->
+                    <div style="display: flex; align-items: center; gap: 10px; margin-left: auto;">
+                        <button id="copySortedBtn" class="btn-copy-header" title="Copy Sorted Data"
+                            style="margin-right: 0;">
+                            <span class="icon">📑</span> COPY
+                        </button>
+                        <div id="filterSummary" class="filter-summary">
+                            <!-- Badges like [BCA 5] [DANA 3] injected here -->
+                        </div>
                     </div>
                 </div>
                 <div class="col-content item-list-container">
