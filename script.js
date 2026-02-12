@@ -159,6 +159,9 @@ const processData = (rawData) => {
                         noRek = match[2];
                         namaRek = match[3].trim();
 
+                        // Remove "Auto" artifact if present at the end
+                        namaRek = namaRek.replace(/\s*Auto$/i, '').trim();
+
                         // Extra cleanup for NAME if it contains " - " or split chars
                         if (namaRek.includes(' - ')) namaRek = namaRek.split(' - ')[0];
                     }
@@ -227,6 +230,8 @@ const processData = (rawData) => {
                             noRek = csv[1].trim();
                             // Join remaining parts in case name has commas
                             namaRek = csv.slice(2).join(',').trim();
+                            // Remove "Auto" artifact if present at the end
+                            namaRek = namaRek.replace(/\s*Auto$/i, '').trim();
                         }
                         break;
                     }
