@@ -84,7 +84,7 @@ const processData = (rawData) => {
 
                 if (bank) {
                     let finalNoRek = noRek;
-                    const bankKey = Object.keys(PREFIXES).find(k => bank.includes(k));
+                    const bankKey = Object.keys(PREFIXES).find(k => bank.includes(k) && !bank.includes('DANAMON'));
                     if (bankKey && !finalNoRek.startsWith(PREFIXES[bankKey])) {
                         const rawNums = finalNoRek.replace(/[^\d]/g, '');
                         if (!rawNums.startsWith(PREFIXES[bankKey])) finalNoRek = PREFIXES[bankKey] + finalNoRek;
@@ -169,7 +169,7 @@ const processData = (rawData) => {
 
                 if (nominal > 0 && bank) {
                     let finalNoRek = noRek;
-                    const bankKey = Object.keys(PREFIXES).find(k => bank.includes(k));
+                    const bankKey = Object.keys(PREFIXES).find(k => bank.includes(k) && !bank.includes('DANAMON'));
                     if (bankKey && !finalNoRek.startsWith(PREFIXES[bankKey])) {
                         finalNoRek = PREFIXES[bankKey] + finalNoRek;
                     }
@@ -239,7 +239,7 @@ const processData = (rawData) => {
 
                 if (nominal > 0 && bank) {
                     let finalNoRek = noRek;
-                    const bankKey = Object.keys(PREFIXES).find(k => bank.includes(k));
+                    const bankKey = Object.keys(PREFIXES).find(k => bank.includes(k) && !bank.includes('DANAMON'));
                     if (bankKey && !finalNoRek.startsWith(PREFIXES[bankKey])) {
                         finalNoRek = PREFIXES[bankKey] + finalNoRek;
                     }
@@ -298,7 +298,7 @@ const processData = (rawData) => {
 
                 if (nominal > 0) {
                     let finalNoRek = noRek;
-                    const bankKey = Object.keys(PREFIXES).find(k => bank.includes(k));
+                    const bankKey = Object.keys(PREFIXES).find(k => bank.includes(k) && !bank.includes('DANAMON'));
                     if (bankKey && !finalNoRek.startsWith(PREFIXES[bankKey])) {
                         finalNoRek = PREFIXES[bankKey] + finalNoRek;
                     }

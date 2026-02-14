@@ -86,176 +86,180 @@ body::after {
 }
 
 /* HEADER */
+/* HEADER RE-DESIGN: PROFESSIONAL HUD */
 .main-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 20px;
-    border-bottom: 1px solid rgba(0, 242, 255, 0.2);
-    background: rgba(16, 18, 27, 0.6);
-    backdrop-filter: blur(10px);
-    border-radius: 0 0 16px 16px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-    margin: -20px -20px 0 -20px;
-    /* Stretch to edges */
-    margin-bottom: 20px;
-}
-
-.title-marquee-container {
-    flex: 1;
-    overflow: hidden;
-    margin-right: 30px;
+    padding: 15px 30px;
+    border-bottom: 1px solid rgba(0, 242, 255, 0.1);
+    border-top: 1px solid rgba(0, 242, 255, 0.1);
+    /* HUD Top Border */
+    background: rgba(5, 7, 10, 0.85);
+    /* Darker, more opaque for contrast */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    margin: -20px -20px 20px -20px;
     position: relative;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-    -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+    z-index: 100;
 }
 
+/* Decorative HUD Lines */
+.main-header::before,
+.main-header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    width: 20px;
+    height: 4px;
+    background: var(--primary);
+}
+
+.main-header::before {
+    left: 0;
+}
+
+.main-header::after {
+    right: 0;
+}
+
+/* Container for Title - CENTERED & STATIC */
+.title-marquee-container {
+    flex: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    order: 2;
+    /* Center Position */
+    text-align: center;
+}
+
+/* Refined Title - NO SCROLL, JUST GLOW */
 .glow-text {
-    font-size: 2.2rem;
+    font-size: 2rem;
     font-weight: 800;
     color: #fff;
     text-shadow:
-        0 0 5px rgba(0, 242, 255, 0.8),
         0 0 10px rgba(0, 242, 255, 0.5),
-        0 0 20px rgba(112, 0, 255, 0.5);
-    letter-spacing: 3px;
+        0 0 20px rgba(0, 242, 255, 0.3);
+    letter-spacing: 4px;
     font-family: 'Rajdhani', sans-serif;
+    text-transform: uppercase;
+    background: linear-gradient(to bottom, #ffffff, #a0eafe);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 5px rgba(0, 242, 255, 0.5));
 }
 
 .scrolling-title {
-    white-space: nowrap;
-    position: absolute;
-    animation: scrollLive 20s linear infinite;
-    min-width: 100%;
-    will-change: transform;
-    /* PERFORMANCE BOOST */
-    transform: translateZ(0);
-    /* Force GPU */
+    animation: none;
+    /* Removed Scroll for Professional Look */
+    position: relative;
+    transform: none;
+    white-space: normal;
+    min-width: auto;
 }
 
-@keyframes scrollLive {
-    0% {
-        transform: translateX(50%);
-        opacity: 0;
-    }
-
-    5% {
-        opacity: 1;
-    }
-
-    100% {
-        transform: translateX(-150%);
-        opacity: 1;
-    }
-}
-
+/* STATUS BAR - LEFT OR RIGHT SPLIT */
 .status-bar {
+    flex: 1;
     display: flex;
-    gap: 20px;
+    gap: 15px;
     align-items: center;
     font-family: 'Roboto Mono', monospace;
+    justify-content: flex-end;
+    /* Push to right */
+    order: 3;
+    /* Right Position */
 }
 
-/* COOL NEON TIME CONTAINER */
+/* BRANDING / SYSTEM INFO - LEFT SIDE */
+.system-brand {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    order: 1;
+    /* Left Position */
+    color: var(--text-muted);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+}
+
+.system-brand::before {
+    content: 'SYS //';
+    color: var(--primary);
+    margin-right: 5px;
+    font-weight: bold;
+}
+
+/* UPDATED TIME CONTAINER - HUD PILL */
 .time-container {
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: rgba(0, 0, 0, 0.4);
-    padding: 5px 15px;
-    border-radius: 50px;
-    border: 1px solid rgba(0, 242, 255, 0.3);
-    box-shadow: 0 0 10px rgba(0, 242, 255, 0.1);
-    position: relative;
-    overflow: hidden;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 6px 18px;
+    border-radius: 4px;
+    /* Tech corners */
+    border: 1px solid rgba(0, 242, 255, 0.2);
+    box-shadow: inset 0 0 10px rgba(0, 242, 255, 0.05);
+    height: 40px;
 }
 
-/* Scanning Light Effect */
+/* Remove old animations that were distracting */
 .time-container::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 50%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(0, 242, 255, 0.3), transparent);
-    transform: skewX(-20deg);
-    animation: scanLight 4s infinite linear;
-}
-
-@keyframes scanLight {
-    0% {
-        left: -100%;
-    }
-
-    20% {
-        left: 200%;
-    }
-
-    100% {
-        left: 200%;
-    }
+    display: none;
 }
 
 .time-icon {
-    font-size: 1rem;
-    filter: drop-shadow(0 0 2px #00f2ff);
-    animation: iconSpin 60s linear infinite;
-}
-
-@keyframes iconSpin {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
+    font-size: 0.9rem;
+    color: var(--primary);
+    animation: pulse 2s infinite;
 }
 
 .neon-time {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #fff;
-    text-shadow:
-        0 0 5px #00f2ff,
-        0 0 10px #00f2ff,
-        0 0 20px #007ac1;
-    letter-spacing: 2px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--primary);
+    text-shadow: 0 0 5px rgba(0, 242, 255, 0.5);
+    letter-spacing: 1px;
 }
 
 .status-badge {
-    background: rgba(0, 255, 157, 0.1);
+    background: rgba(0, 255, 157, 0.05);
     color: var(--success);
-    padding: 6px 12px;
+    padding: 8px 16px;
     border-radius: 4px;
-    border: 1px solid var(--success);
-    font-size: 0.9rem;
+    border: 1px solid rgba(0, 255, 157, 0.2);
+    font-size: 0.85rem;
     font-weight: 700;
-    box-shadow: 0 0 10px rgba(0, 255, 157, 0.2);
-    text-shadow: 0 0 5px rgba(0, 255, 157, 0.5);
-    animation: pulse-green 2s infinite;
+    letter-spacing: 1px;
+    box-shadow: 0 0 5px rgba(0, 255, 157, 0.1);
+    height: 40px;
+    display: flex;
+    align-items: center;
+    text-transform: uppercase;
 }
 
 .status-badge.live {
-    box-shadow: 0 0 8px rgba(0, 255, 157, 0.2);
+    box-shadow: 0 0 10px rgba(0, 255, 157, 0.1);
 }
 
-@keyframes pulse-green {
+@keyframes pulse {
     0% {
-        box-shadow: 0 0 5px rgba(0, 255, 157, 0.2);
+        opacity: 0.8;
     }
 
     50% {
-        box-shadow: 0 0 15px rgba(0, 255, 157, 0.5);
+        opacity: 1;
     }
 
     100% {
-        box-shadow: 0 0 5px rgba(0, 255, 157, 0.2);
+        opacity: 0.8;
     }
 }
 
@@ -273,17 +277,19 @@ body::after {
 .column {
     flex: 1;
     /* Clarity Boost: Slight dark tint + Blur */
-    background: rgba(10, 12, 18, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(6, 8, 12, 0.7);
+    /* Improved Dark Glass */
+    border: 1px solid rgba(0, 242, 255, 0.08);
+    border-top: 1px solid rgba(0, 242, 255, 0.2);
     /* Light edge */
-    border-radius: 16px;
+    border-radius: 8px;
+    /* Sharper corners for Tech Look */
     display: flex;
     flex-direction: column;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(12px);
     /* Restored some blur for readability */
-    -webkit-backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(12px);
     transition: all 0.3s ease;
 }
 
@@ -301,7 +307,7 @@ body::after {
     padding: 18px 25px;
     position: relative;
     overflow: hidden;
-    border-radius: 16px 16px 0 0;
+    border-radius: 8px 8px 0 0;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
@@ -370,7 +376,8 @@ body::after {
 
 .col-content {
     flex: 1;
-    overflow-y: auto;
+    overflow: hidden;
+    /* Prevent container scroll, force internal scroll */
     padding: 15px;
     position: relative;
     display: flex;
@@ -405,7 +412,7 @@ body::after {
 /* TERMINAL INPUT STYLE */
 #inputArea {
     width: 100%;
-    height: 100%;
+    /* Removed height: 100% to allow flex to work properly */
     /* Darker, distinct area for typing */
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -419,8 +426,13 @@ body::after {
     line-height: 1.5;
     resize: none;
     flex: 1;
+    /* Take remaining space */
     transition: all 0.3s ease;
     box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+    white-space: pre-wrap;
+    word-break: break-all;
+    overflow-y: auto;
+    /* Internal scrolling */
 }
 
 #inputArea:focus {
@@ -442,7 +454,9 @@ body::after {
     border-radius: 6px;
     cursor: pointer;
     font-family: 'Rajdhani', sans-serif;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
     font-size: 1rem;
     transition: all 0.2s;
     text-transform: uppercase;
@@ -733,12 +747,14 @@ tbody td:nth-child(5) {
 }
 
 .bank-bni {
-    background: #005e6a !important;
+    background: #FF6600 !important;
+    /* Orange */
     color: white !important;
 }
 
 .bank-seabank {
-    background: #ff5600 !important;
+    background: #BF360C !important;
+    /* Deep "Burnt" Orange to distinguish from BNI */
     color: white !important;
 }
 
@@ -748,8 +764,10 @@ tbody td:nth-child(5) {
 }
 
 .bank-danamon {
-    background: #f58220 !important;
-    color: white !important;
+    background: #FFD700 !important;
+    /* Yellow */
+    color: black !important;
+    /* Black text for visibility on yellow */
 }
 
 .bank-cimb {
@@ -962,11 +980,11 @@ tbody td:nth-child(5) {
 }
 
 .s-cell-bank .bank-bni {
-    background: #005e6a !important;
+    background: #FF6600 !important;
 }
 
 .s-cell-bank .bank-seabank {
-    background: #ff5600 !important;
+    background: #BF360C !important;
 }
 
 .s-cell-bank .bank-bsi {
@@ -974,7 +992,8 @@ tbody td:nth-child(5) {
 }
 
 .s-cell-bank .bank-danamon {
-    background: #f58220 !important;
+    background: #FFD700 !important;
+    color: black !important;
 }
 
 .s-cell-bank .bank-cimb {
