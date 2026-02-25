@@ -99,214 +99,152 @@ const processData = (rawData) => {
 
     // 2. TEXT PARSING
     const lines = rawData.split(/\r?\n/).filter(line => line.trim() !== '');
-    // Updated Bank List including new requests
     const bankList = ['BCA', 'BRI', 'MANDIRI', 'BNI', 'DANA', 'GOPAY', 'OVO', 'LINKAJA', 'SEABANK', 'DANAMON', 'CIMB', 'MAYBANK', 'JAGO', 'USDT', 'BSI'];
 
-    // CHECK FOR MULTI-LINE BLOCK FORMAT (Anchor: "Deposit")
-    // CHECK FOR MULTI-LINE BLOCK FORMAT (Anchor: "Deposit" OR "Withdraw")
-    const hasDepositKeyword = lines.some(l => l.includes('Deposit'));
-    const hasWithdrawKeyword = lines.some(l => l.includes('Withdraw'));
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
 
-    if (hasDepositKeyword) {
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
+        // --- TRY SINGLE LINE PARSING FIRST ---
+        const tokens = line.split(/[\t]+| {2,}/).map(t => t.trim()).filter(t => t !== '');
+        const bankIndex = tokens.findIndex(t => {
+            const clean = t.toUpperCase().replace(/[^A-Z]/g, '');
+            return bankList.includes(clean);
+        });
 
-            if (line.includes('Deposit')) {
-                // FOUND ANCHOR: "Deposit 2026-01-13 20:55:58 ... 20,000 ... "
+        if (bankIndex !== -1) {
+            const bank = tokens[bankIndex].toUpperCase().replace(/[^A-Z]/g, '');
+            let noRek = '';
+            let namaRek = '';
+            let username = '';
+            let nominal = 0;
 
-                // 1. EXTRACT NOMINAL
-                let nominal = 0;
-                // Tokens: ["Deposit", "Date", "Time", "Amount", "Fee?"]
-                // Example: Deposit	2026-01-13 21:02:02	200,000	115.65
-                const parts = line.split(/[\t\s]+/);
-                for (const p of parts) {
-                    if (/[\d,]+\.?\d*/.test(p) && p.length > 3 && !p.includes(':') && !p.includes('-')) {
-                        let clean = p.replace(/,/g, '');
-                        const val = parseFloat(clean);
-                        if (!isNaN(val) && val > 0 && val < 100000000000) {
-                            nominal = val;
-                            break;
-                        }
-                    }
-                }
+            if (bankIndex >= 1) noRek = tokens[bankIndex - 1];
+            if (bankIndex >= 2) namaRek = tokens[bankIndex - 2];
+            if (bankIndex >= 3) username = tokens[bankIndex - 3];
 
-                // 2. EXTRACT USERNAME (Line before)
-                let username = '-';
-                if (i > 0) {
-                    const prev = lines[i - 1].trim();
-                    // "1	atirdian"
-                    const prevParts = prev.split(/[\t\s]+/);
-                    if (prevParts.length > 1 && /^\d+$/.test(prevParts[0])) {
-                        username = prevParts[1];
-                    } else {
-                        username = prevParts[0];
-                    }
-                }
+            // Find Nominal after Bank
+            for (let k = bankIndex + 1; k < tokens.length; k++) {
+                const token = tokens[k];
+                // Skip tokens that look like Date, Time, or Transaction IDs 
+                if (/[a-zA-Z]/.test(token) && token.length > 3) continue;
+                if (token.includes('-') && token.length > 8) continue;
+                if (token.includes(':')) continue; // Skip Time
+                if (token === '-' || token === '|') continue; // Skip separators
 
-                // 3. EXTRACT BANK INFO (Line after)
-                // "G3	BANK DANA, 0822..., NAME	From : ..."
-                let bank = '';
-                let noRek = '';
-                let namaRek = '';
-
-                if (i + 1 < lines.length) {
-                    const nextLine = lines[i + 1].trim();
-                    // Regex: Match "BANK [NAME], [NUM], [NAME]" ignoring leading G-code
-                    const match = nextLine.match(/(?:G\d+\s+)?BANK\s+([A-Z]+)[,\s]+(\d+)[,\s]+(.*?)(?:\s+From|\s+To|\t|$)/i);
-
-                    if (match) {
-                        bank = match[1].toUpperCase();
-                        noRek = match[2];
-                        namaRek = match[3].trim();
-
-                        // Remove "Auto" artifact if present at the end
-                        namaRek = namaRek.replace(/\s*Auto$/i, '').trim();
-
-                        // Extra cleanup for NAME if it contains " - " or split chars
-                        if (namaRek.includes(' - ')) namaRek = namaRek.split(' - ')[0];
-                    }
-                }
-
-                if (nominal > 0 && bank) {
-                    let finalNoRek = noRek;
-                    const bankKey = Object.keys(PREFIXES).find(k => bank.includes(k) && !bank.includes('DANAMON'));
-                    if (bankKey && !finalNoRek.startsWith(PREFIXES[bankKey])) {
-                        finalNoRek = PREFIXES[bankKey] + finalNoRek;
-                    }
-
-                    processedData.push({ bank, noRek: finalNoRek, username, namaRek, nominal });
-                    totalAmount += nominal;
+                let clean = token.replace(/,/g, '');
+                const val = parseFloat(clean);
+                if (!isNaN(val) && val > 0 && val < 100000000000) {
+                    nominal = val;
+                    break;
                 }
             }
+
+            if (nominal > 0) {
+                let finalNoRek = noRek;
+                const bankKey = Object.keys(PREFIXES).find(k => bank.includes(k) && !bank.includes('DANAMON'));
+                if (bankKey && !finalNoRek.startsWith(PREFIXES[bankKey])) {
+                    finalNoRek = PREFIXES[bankKey] + finalNoRek;
+                }
+
+                // Cleanup namaRek (Remove "Auto" suffix)
+                let cleanedNamaRek = (namaRek || '-').replace(/\s*Auto$/i, '').trim();
+
+                processedData.push({ bank, noRek: finalNoRek, username: username || '-', namaRek: cleanedNamaRek, nominal });
+                totalAmount += nominal;
+                continue;
+            }
         }
-    } else if (hasWithdrawKeyword) {
-        // WITHDRAW FORMAT PARSING
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (line.includes('Withdraw')) {
-                // FOUND ANCHOR: "Withdraw 2026-01-15... 500,000 ..."
 
-                // 1. EXTRACT NOMINAL
-                let nominal = 0;
-                // Format: Withdraw [Date] [Time] [Nominal] [Fee]
-                const parts = line.split(/[\t\s]+/);
-                for (const p of parts) {
-                    // Skip parts that look like Date or Time
-                    if (p.includes('-') || p.includes(':')) continue;
-
+        // --- TRY DEPOSIT BLOCK ---
+        if (line.includes('Deposit')) {
+            let nominal = 0;
+            const parts = line.split(/[\t\s]+/);
+            for (const p of parts) {
+                if (/[\d,]+\.?\d*/.test(p) && p.length > 3 && !p.includes(':') && !p.includes('-')) {
                     let clean = p.replace(/,/g, '');
                     const val = parseFloat(clean);
                     if (!isNaN(val) && val > 0 && val < 100000000000) {
                         nominal = val;
-                        break; // Take the first valid number (Nominal)
-                    }
-                }
-
-                // 2. EXTRACT USERNAME (Line before)
-                let username = '-';
-                if (i > 0) {
-                    const prev = lines[i - 1].trim();
-                    // Format: "1 [Username]" or just "Username"
-                    const prevParts = prev.split(/[\t\s]+/);
-                    if (prevParts.length >= 2) username = prevParts[prevParts.length - 1];
-                    else username = prevParts[0];
-                }
-
-                // 3. EXTRACT BANK INFO (Search forward for "To :")
-                // Expected: "To : MANDIRI,1390029713397,Anis Fadillah"
-                let bank = '';
-                let noRek = '';
-                let namaRek = '';
-
-                // Look ahead up to 5 lines
-                for (let j = 1; j <= 5; j++) {
-                    if (i + j >= lines.length) break;
-                    const nextLine = lines[i + j].trim();
-                    if (nextLine.startsWith('To :') || nextLine.includes('To :')) {
-                        const cleanLine = nextLine.substring(nextLine.indexOf(':') + 1).trim();
-                        const csv = cleanLine.split(',');
-                        if (csv.length >= 3) {
-                            bank = csv[0].trim().toUpperCase();
-                            noRek = csv[1].trim();
-                            // Join remaining parts in case name has commas
-                            namaRek = csv.slice(2).join(',').trim();
-                            // Remove "Auto" artifact if present at the end
-                            namaRek = namaRek.replace(/\s*Auto$/i, '').trim();
-                        }
                         break;
                     }
                 }
+            }
 
-                if (nominal > 0 && bank) {
-                    let finalNoRek = noRek;
-                    const bankKey = Object.keys(PREFIXES).find(k => bank.includes(k) && !bank.includes('DANAMON'));
-                    if (bankKey && !finalNoRek.startsWith(PREFIXES[bankKey])) {
-                        finalNoRek = PREFIXES[bankKey] + finalNoRek;
+            let username = '-';
+            if (i > 0) {
+                const prev = lines[i - 1].trim();
+                const prevParts = prev.split(/[\t\s]+/);
+                if (prevParts.length > 1 && /^\d+$/.test(prevParts[0])) username = prevParts[1];
+                else username = prevParts[0];
+            }
+
+            if (i + 1 < lines.length) {
+                const nextLine = lines[i + 1].trim();
+                const match = nextLine.match(/(?:G\d+\s+)?BANK\s+([A-Z]+)[,\s]+(\d+)[,\s]+(.*?)(?:\s+From|\s+To|\t|$)/i);
+                if (match) {
+                    const bank = match[1].toUpperCase();
+                    let noRek = match[2];
+                    let namaRek = match[3].trim().replace(/\s*Auto$/i, '').trim();
+
+                    if (nominal > 0) {
+                        let finalNoRek = noRek;
+                        const bankKey = Object.keys(PREFIXES).find(k => bank.includes(k) && !bank.includes('DANAMON'));
+                        if (bankKey && !finalNoRek.startsWith(PREFIXES[bankKey])) finalNoRek = PREFIXES[bankKey] + finalNoRek;
+                        processedData.push({ bank, noRek: finalNoRek, username, namaRek, nominal });
+                        totalAmount += nominal;
+                        i++;
+                        continue;
                     }
-                    processedData.push({ bank, noRek: finalNoRek, username, namaRek, nominal });
-                    totalAmount += nominal;
                 }
             }
         }
-    } else {
-        // SINGLE LINE FALLBACK
-        lines.forEach((line) => {
-            let bank = '';
-            let noRek = '';
-            let username = '';
-            let namaRek = '';
+
+        // --- TRY WITHDRAW BLOCK ---
+        if (line.includes('Withdraw')) {
             let nominal = 0;
-            let isValidRow = false;
-
-            const tokens = line.split(/[\t]+| {2,}/).map(t => t.trim()).filter(t => t !== '');
-
-            // STRICT BANK DETECTION
-            const bankIndex = tokens.findIndex(t => {
-                const clean = t.toUpperCase().replace(/[^A-Z]/g, '');
-                return bankList.includes(clean);
-            });
-
-            if (bankIndex !== -1) {
-                isValidRow = true;
-                bank = tokens[bankIndex].toUpperCase().replace(/[^A-Z]/g, '');
-
-                if (bankIndex >= 1) noRek = tokens[bankIndex - 1];
-                if (bankIndex >= 2) namaRek = tokens[bankIndex - 2];
-                if (bankIndex >= 3) username = tokens[bankIndex - 3];
-
-                // Find Nominal after Bank
-                for (let k = bankIndex + 1; k < tokens.length; k++) {
-                    const token = tokens[k];
-                    if (/[a-zA-Z]/.test(token)) continue;
-                    if (token.includes('-') && token.length > 8) continue;
-
-                    let clean = token.replace(/,/g, '');
-                    // Handle decimals
-                    if (clean.includes('.') && clean.split('.')[1].length === 2) {
-                        // keep decimal
-                    } else if (clean.includes('.')) {
-                        // assume thousands separator
-                    }
-
-                    const val = parseFloat(clean);
-                    if (!isNaN(val) && val > 0) {
-                        if (val > 100000000000) continue;
-                        nominal = val;
-                        break;
-                    }
-                }
-
-                if (nominal > 0) {
-                    let finalNoRek = noRek;
-                    const bankKey = Object.keys(PREFIXES).find(k => bank.includes(k) && !bank.includes('DANAMON'));
-                    if (bankKey && !finalNoRek.startsWith(PREFIXES[bankKey])) {
-                        finalNoRek = PREFIXES[bankKey] + finalNoRek;
-                    }
-                    processedData.push({ bank, noRek: finalNoRek, username: username || '-', namaRek: namaRek || '-', nominal });
-                    totalAmount += nominal;
+            const parts = line.split(/[\t\s]+/);
+            for (const p of parts) {
+                if (p.includes('-') || p.includes(':')) continue;
+                let clean = p.replace(/,/g, '');
+                const val = parseFloat(clean);
+                if (!isNaN(val) && val > 0 && val < 100000000000) {
+                    nominal = val;
+                    break;
                 }
             }
-        });
+
+            let username = '-';
+            if (i > 0) {
+                const prev = lines[i - 1].trim();
+                const prevParts = prev.split(/[\t\s]+/);
+                if (prevParts.length >= 2) username = prevParts[prevParts.length - 1];
+                else username = prevParts[0];
+            }
+
+            for (let j = 1; j <= 5; j++) {
+                if (i + j >= lines.length) break;
+                const nextLine = lines[i + j].trim();
+                if (nextLine.startsWith('To :') || nextLine.includes('To :')) {
+                    const cleanLine = nextLine.substring(nextLine.indexOf(':') + 1).trim();
+                    const csv = cleanLine.split(',');
+                    if (csv.length >= 3) {
+                        const bank = csv[0].trim().toUpperCase();
+                        let noRek = csv[1].trim();
+                        let namaRek = csv.slice(2).join(',').trim().replace(/\s*Auto$/i, '').trim();
+
+                        if (nominal > 0) {
+                            let finalNoRek = noRek;
+                            const bankKey = Object.keys(PREFIXES).find(k => bank.includes(k) && !bank.includes('DANAMON'));
+                            if (bankKey && !finalNoRek.startsWith(PREFIXES[bankKey])) finalNoRek = PREFIXES[bankKey] + finalNoRek;
+                            processedData.push({ bank, noRek: finalNoRek, username, namaRek, nominal });
+                            totalAmount += nominal;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
     }
     return { processedData, totalAmount };
 };
