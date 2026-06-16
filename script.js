@@ -17,6 +17,39 @@ const formatCurrency = (num) => {
     }).format(num);
 };
 
+const getNodeText = (node) => {
+    if (!node) return '';
+    return String(node.textContent || node.innerText || '').trim();
+};
+
+const ensureString = (value) => String(value ?? '').trim();
+
+const applyPrefixIfNeeded = (bank, noRek) => {
+    const safeBank = ensureString(bank).toUpperCase();
+    let finalNoRek = ensureString(noRek);
+    const bankKey = Object.keys(PREFIXES).find(k => safeBank.includes(k) && !safeBank.includes('DANAMON'));
+
+    if (bankKey && !finalNoRek.startsWith(PREFIXES[bankKey])) {
+        finalNoRek = PREFIXES[bankKey] + finalNoRek;
+    }
+
+    return finalNoRek;
+};
+
+const getBankClass = (bank) => ensureString(bank).toLowerCase().replace(/[^a-z0-9]/g, '-');
+
+const extractNominalFromTokens = (tokens) => {
+    for (const token of tokens) {
+        if (token.includes('-') || token.includes(':')) continue;
+        const clean = token.replace(/,/g, '');
+        const val = parseFloat(clean);
+        if (!isNaN(val) && val > 0 && val < 100000000000) {
+            return val;
+        }
+    }
+    return 0;
+};
+
 // Update Time
 setInterval(() => {
     const now = new Date();
@@ -48,7 +81,7 @@ const processData = (rawData) => {
         const rows = doc.querySelectorAll('tr');
         rows.forEach(row => {
             const amountEl = row.querySelector('[data-changekey="amount"], [data-changekey="withdrawAmount"]');
-            let nominalStr = amountEl ? (amountEl.innerText || amountEl.textContent) : '';
+            let nominalStr = getNodeText(amountEl);
 
             let nominal = 0;
             if (nominalStr) {
@@ -71,7 +104,7 @@ const processData = (rawData) => {
                 const bankList = ['BCA', 'BRI', 'MANDIRI', 'BNI', 'DANA', 'GOPAY', 'OVO', 'LINKAJA', 'SEABANK', 'DANAMON', 'CIMB', 'MAYBANK', 'JAGO', 'USDT', 'BSI'];
 
                 cells.forEach(cell => {
-                    const txt = cell.innerText.trim();
+                    const txt = getNodeText(cell);
                     if (!txt) return;
 
                     const upper = txt.toUpperCase();
@@ -83,9 +116,9 @@ const processData = (rawData) => {
                 });
 
                 if (bank) {
-                    let finalNoRek = noRek;
+                    let finalNoRek = ensureString(noRek);
                     const bankKey = Object.keys(PREFIXES).find(k => bank.includes(k) && !bank.includes('DANAMON'));
-                    if (bankKey && !finalNoRek.startsWith(PREFIXES[bankKey])) {
+                    if (bankKey) {
                         const rawNums = finalNoRek.replace(/[^\d]/g, '');
                         if (!rawNums.startsWith(PREFIXES[bankKey])) finalNoRek = PREFIXES[bankKey] + finalNoRek;
                     }
@@ -141,11 +174,7 @@ const processData = (rawData) => {
             }
 
             if (nominal > 0) {
-                let finalNoRek = noRek;
-                const bankKey = Object.keys(PREFIXES).find(k => bank.includes(k) && !bank.includes('DANAMON'));
-                if (bankKey && !finalNoRek.startsWith(PREFIXES[bankKey])) {
-                    finalNoRek = PREFIXES[bankKey] + finalNoRek;
-                }
+                const finalNoRek = applyPrefixIfNeeded(bank, noRek);
 
                 // Cleanup namaRek (Remove "Auto" suffix)
                 let cleanedNamaRek = (namaRek || '-').replace(/\s*Auto$/i, '').trim();
@@ -188,9 +217,7 @@ const processData = (rawData) => {
                     let namaRek = match[3].trim().replace(/\s*Auto$/i, '').trim();
 
                     if (nominal > 0) {
-                        let finalNoRek = noRek;
-                        const bankKey = Object.keys(PREFIXES).find(k => bank.includes(k) && !bank.includes('DANAMON'));
-                        if (bankKey && !finalNoRek.startsWith(PREFIXES[bankKey])) finalNoRek = PREFIXES[bankKey] + finalNoRek;
+                        const finalNoRek = applyPrefixIfNeeded(bank, noRek);
                         processedData.push({ bank, noRek: finalNoRek, username, namaRek, nominal });
                         totalAmount += nominal;
                         i++;
@@ -202,15 +229,17 @@ const processData = (rawData) => {
 
         // --- TRY WITHDRAW BLOCK ---
         if (line.includes('Withdraw')) {
-            let nominal = 0;
-            const parts = line.split(/[\t\s]+/);
-            for (const p of parts) {
-                if (p.includes('-') || p.includes(':')) continue;
-                let clean = p.replace(/,/g, '');
-                const val = parseFloat(clean);
-                if (!isNaN(val) && val > 0 && val < 100000000000) {
-                    nominal = val;
-                    break;
+            let nominal = extractNominalFromTokens(line.split(/[\t\s]+/));
+
+            // Withdraw manual sering menaruh nominal di baris setelah label "Withdraw".
+            if (nominal === 0) {
+                for (let j = 1; j <= 3; j++) {
+                    if (i + j >= lines.length) break;
+                    const nominalLine = lines[i + j].trim();
+                    if (!nominalLine || nominalLine.startsWith('To :') || nominalLine.startsWith('From :')) continue;
+
+                    nominal = extractNominalFromTokens(nominalLine.split(/[\t\s]+/));
+                    if (nominal > 0) break;
                 }
             }
 
@@ -234,9 +263,7 @@ const processData = (rawData) => {
                         let namaRek = csv.slice(2).join(',').trim().replace(/\s*Auto$/i, '').trim();
 
                         if (nominal > 0) {
-                            let finalNoRek = noRek;
-                            const bankKey = Object.keys(PREFIXES).find(k => bank.includes(k) && !bank.includes('DANAMON'));
-                            if (bankKey && !finalNoRek.startsWith(PREFIXES[bankKey])) finalNoRek = PREFIXES[bankKey] + finalNoRek;
+                            const finalNoRek = applyPrefixIfNeeded(bank, noRek);
                             processedData.push({ bank, noRek: finalNoRek, username, namaRek, nominal });
                             totalAmount += nominal;
                         }
@@ -262,7 +289,7 @@ const renderData = (data) => {
     const fragment = document.createDocumentFragment();
     data.forEach(item => {
         const tr = document.createElement('tr');
-        const bankClass = item.bank.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        const bankClass = getBankClass(item.bank);
 
         tr.innerHTML = `
             <td class="bank-cell"><span class="badge bank bank-${bankClass}">${item.bank}</span></td>
@@ -312,7 +339,7 @@ const renderSortedData = (data) => {
     if (summaryContainer) {
         summaryContainer.innerHTML = sortedKeys.map(bank => {
             const count = grouped[bank].length;
-            const bankClass = bank.toLowerCase().replace(/[^a-z0-9]/g, '-');
+            const bankClass = getBankClass(bank);
             return `<span class="summary-badge bank-${bankClass}">${bank} ${count}</span>`;
         }).join('');
     }
@@ -335,7 +362,7 @@ const renderSortedData = (data) => {
     // Append rows (String concatenation is fast)
     sortedKeys.forEach(bank => {
         const groupItems = grouped[bank];
-        const bankClass = bank.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        const bankClass = getBankClass(bank);
 
         const rowsHtml = groupItems.map(item => `
             <tr>
@@ -363,6 +390,18 @@ const debounce = (func, wait) => {
     };
 };
 
+const runProcessing = (text) => {
+    try {
+        const { processedData, totalAmount } = processData(text);
+        globalProcessedData = processedData;
+        renderData(processedData);
+        renderSortedData(processedData);
+        updateSummary(processedData.length, totalAmount, processedData);
+    } catch (error) {
+        console.error('Processing error:', error);
+    }
+};
+
 // Event Listener for Paste/Input (Debounced)
 const handleInput = debounce((e) => {
     const text = e.target.value;
@@ -380,32 +419,24 @@ const handleInput = debounce((e) => {
     requestAnimationFrame(() => {
         // Use setTimeout to break the task if it's very heavy, allowing the browser to breathe
         setTimeout(() => {
-            const { processedData, totalAmount } = processData(text);
-            globalProcessedData = processedData;
-
-            // Render Processed List
-            renderData(processedData);
-
-            // Render Sorted List (Heavy)
-            renderSortedData(processedData);
-
-            updateSummary(processedData.length, totalAmount, processedData);
+            runProcessing(text);
         }, 0);
     });
 }, 150); // Faster debounce (150ms) for responsiveness
 
 if (inputArea) inputArea.addEventListener('input', handleInput);
+if (inputArea) {
+    inputArea.addEventListener('paste', () => {
+        setTimeout(() => handleInput({ target: inputArea }), 0);
+    });
+}
 
 if (processBtn) processBtn.addEventListener('click', () => {
     const text = inputArea ? inputArea.value : '';
     // Show "Processing..." indicator if needed, but for now just run
     requestAnimationFrame(() => {
         setTimeout(() => {
-            const { processedData, totalAmount } = processData(text);
-            globalProcessedData = processedData;
-            renderData(processedData);
-            renderSortedData(processedData);
-            updateSummary(processedData.length, totalAmount);
+            runProcessing(text);
         }, 0);
     });
 });
